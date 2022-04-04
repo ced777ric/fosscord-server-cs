@@ -1,51 +1,58 @@
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Fosscord.API.PostData;
 
 public class RegisterData
 {
-    [JsonProperty("email")]
+    [JsonPropertyName("email")]
+    [Required]
     public string Email { get; set; }
 
-    [JsonProperty("username")]
+    [JsonPropertyName("username")]
+    [Required]
     public string Username { get; set; }
 
-    [JsonProperty("password")]
+    [JsonPropertyName("password")]
+    [Required]
     public string Password { get; set; }
 
-    [JsonProperty("invite")]
-    public object Invite { get; set; }
+    [JsonPropertyName("invite")]
+    public string? Invite { get; set; }
 
-    [JsonProperty("consent")]
+    [JsonPropertyName("consent")]
     public bool Consent { get; set; }
 
-    [JsonProperty("date_of_birth")]
-    public string DateOfBirth { get; set; }
+    [JsonPropertyName("date_of_birth")]
+    public string? DateOfBirth { get; set; }
 
-    [JsonProperty("gift_code_sku_id")]
-    public object GiftCodeSkuId { get; set; }
+    [JsonPropertyName("gift_code_sku_id")]
+    public string? GiftCodeSkuId { get; set; }
 
-    [JsonProperty("captcha_key")]
-    public object CaptchaKey { get; set; }
+    [JsonPropertyName("captcha_key")]
+    public string? CaptchaKey { get; set; }
 }
 
 public class LoginData
 {
-    [JsonProperty("login")]
+    [JsonPropertyName("login")]
+    [Required]
     public string Login { get; set; }
 
-    [JsonProperty("password")]
+    [JsonPropertyName("password")]
+    [Required]
     public string Password { get; set; }
 
-    [JsonProperty("undelete")]
+    [JsonPropertyName("undelete")]
     public bool Undelete { get; set; }
 
-    [JsonProperty("captcha_key")]
-    public object CaptchaKey { get; set; }
+    [JsonPropertyName("captcha_key")]
+    public string? CaptchaKey { get; set; }
 
-    [JsonProperty("login_source")]
-    public object LoginSource { get; set; }
+    [JsonPropertyName("login_source")] 
+    public string? LoginSource { get; set; }
 
-    [JsonProperty("gift_code_sku_id")]
-    public object GiftCodeSkuId { get; set; }
+    [JsonPropertyName("gift_code_sku_id")]
+    public string? GiftCodeSkuId { get; set; }
 }

@@ -12,8 +12,4 @@
         <ProjectReference Include="..\Fosscord.Dependencies\Fosscord.Dependencies.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Models" />
-    </ItemGroup>
-
 </Project>
