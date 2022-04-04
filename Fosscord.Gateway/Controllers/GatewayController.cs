@@ -152,6 +152,10 @@ public class GatewayController : Controller
                 {
                     await Clients[client].SendAsync(ZLib.Compress(bytes), WebSocketMessageType.Binary, true, client.CancellationToken);
                 }
+                else
+                {
+                    await Clients[client].SendAsync(bytes, WebSocketMessageType.Binary, true, client.CancellationToken);
+                }
                 break;
 
             case "etf": //todo: implement
