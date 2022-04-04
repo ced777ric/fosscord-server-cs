@@ -1,4 +1,4 @@
-﻿namespace Fosscord.Gateway;
+﻿namespace Fosscord.Util.Models;
 
 public class FieldErrorInner
 {

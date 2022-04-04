@@ -3,6 +3,7 @@ using Fosscord.API.PostData;
 using Fosscord.DbModel;
 using Fosscord.DbModel.Scaffold;
 using Fosscord.Gateway;
+using Fosscord.Util.Models;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
