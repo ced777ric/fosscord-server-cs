@@ -96,6 +96,7 @@ public class AuthController : Controller
 
         int minumumAge = FosscordConfig.GetInt("register_minimum_age", 13);
         bool dateOfBirthRequired = FosscordConfig.GetBool("register_date_of_birth_required", true);
+        bool accessNsfw = false;
         if (dateOfBirthRequired)
         {
             if (!DateOnly.TryParse(data.DateOfBirth, out DateOnly birthTime))
@@ -121,6 +122,9 @@ public class AuthController : Controller
             if (DateTime.Now.DayOfYear < birthTime.DayOfYear)  
                 age = age - 1;
 
+            if (age >= 18)
+                accessNsfw = true;
+            
             if (age < minumumAge)
             {
                 return BadRequest(new FieldValidationError(new Dictionary<string, FieldError>()
@@ -163,7 +167,7 @@ public class AuthController : Controller
             Deleted = false,
             Email = data.Email,
             Rights = "0", // TODO = grant rights correctly, as 0 actually stands for no rights at all
-            NsfwAllowed = true, // TODO = depending on age
+            NsfwAllowed = accessNsfw,
             PublicFlags = 0,
             Flags = "0", // TODO = generate
             Data = JsonConvert.SerializeObject(new
