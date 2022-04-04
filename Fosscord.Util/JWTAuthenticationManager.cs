@@ -20,7 +20,7 @@ public class JWTAuthenticationManager
         tokenKey = FosscordConfig.GetString("security_jwtSecret", RandomStringGenerator.Generate(255));
     }
 
-    public User GetUserFromToken(string token)
+    public User GetUserFromToken(string token, out ClaimsPrincipal claimsPrincipal)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(tokenKey);
@@ -33,6 +33,7 @@ public class JWTAuthenticationManager
             ValidateIssuer = false,
         };
         var tokenClaim = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken tokenValidated);
+        claimsPrincipal = tokenClaim;
         return db.Users.FirstOrDefault(x => x.Id == tokenClaim.Identity.Name);
     }
  

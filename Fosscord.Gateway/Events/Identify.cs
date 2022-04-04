@@ -1,10 +1,12 @@
 ﻿using System.Net.WebSockets;
+using System.Security.Claims;
 using Fosscord.API.Classes;
 using Fosscord.API.Utilities;
 using Fosscord.DbModel;
 using Fosscord.DbModel.Scaffold;
 using Fosscord.Gateway.Controllers;
 using Fosscord.Gateway.Models;
+using Fosscord.Util.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
@@ -31,7 +33,7 @@ public class Identify: IGatewayMessage
             User user = null;
             try
             {
-                 user = _auth.GetUserFromToken(identify.token);
+                 user = _auth.GetUserFromToken(identify.token, out ClaimsPrincipal claimsPrincipal);
             }
             catch (Exception e)
             {
@@ -49,63 +51,35 @@ public class Identify: IGatewayMessage
 
             Db db = Db.GetNewDb();
             client.session_id = RandomStringGenerator.Generate(32);
+            List<PublicUser> users = new List<PublicUser>();
 
-            var privateUser = new ReadyEvent.PrivateUser()
+            foreach (var relation in db.Relationships.Include(s => s.To).Where(s => s.FromId == user.Id).ToList())
             {
-                accent_color = user.AccentColor,
-                avatar = user.Avatar,
-                banner = user.Banner,
-                bio = user.Bio,
-                bot = user.Bot,
-                desktop = user.Desktop,
-                discriminator = user.Discriminator,
-                email = user.Email,
-                flags = user.Flags,
-                id = user.Id,
-                username = user.Username,
-                mobile = user.Mobile,
-                phone = user.Phone,
-                premium = user.Premium,
-                premium_type = user.PremiumType,
-                nsfw_allowed = user.NsfwAllowed,
-                mfa_enabled = user.MfaEnabled,
-                verified = user.Verified,
-                public_flags = user.PublicFlags,
-            };
-            List<ReadyEvent.PublicRelationShip> relationShips = new List<ReadyEvent.PublicRelationShip>();
-            foreach (var rel in db.Relationships.Include(s => s.To).Where(s => s.Id == user.Id))
-            {
-                ReadyEvent.PublicUser user1 = new ReadyEvent.PublicUser()
-                {
-                    accent_color = rel.To.AccentColor,
-                    avatar = rel.To.Avatar,
-                    banner = rel.To.Banner,
-                    bio = rel.To.Bio,
-                    bot = rel.To.Bot,
-                    discriminator = rel.To.Discriminator,
-                    id = rel.To.Id,
-                    premium_since = new DateTime(),
-                    public_flags = rel.To.PublicFlags,
-                    username = rel.To.Username
-                };
-                
-                relationShips.Add(new ReadyEvent.PublicRelationShip()
-                {
-                    id = rel.Id,
-                    nickname = rel.Nickname,
-                    type = rel.Type,
-                    user = user1 
-                });
+                if (users.Any(s => s.id == relation.ToId))
+                    continue;
+                users.Add(relation.To.AsPublicUser());
             }
+
+            var dmChannels = db.Channels.Include(s => s.Recipients).ThenInclude(s => s.User).Where(s => (s.Type == 1 || s.Type == 3) && s.Recipients.Any(s => s.Id == user.Id)).ToList();
+            foreach (var channel in dmChannels)
+            {
+                foreach (var recipient in channel.Recipients)
+                {
+                    if (users.Any(s => s.id == recipient.UserId))
+                        continue;
+                    users.Add(recipient.User.AsPublicUser());
+                }
+            }
+            
             var settings = JsonConvert.DeserializeObject<Dictionary<string, string>>(user.Settings);
             var readyEventData = new ReadyEvent.ReadyEventData()
             {
                 v = 9,
                 application = db.Applications.FirstOrDefault(s => s.Id == user.Id),
-                user = privateUser,
+                user = user.AsPrivateUser(),
                 user_settings = user.Settings,
                 guilds = db.Members.Where(s => s.Id == user.Id).Select(s => s.Guild).ToList(),
-                relationships = relationShips,
+                relationships = db.Relationships.Include(s => s.To).Where(s => s.FromId == user.Id).ToList().Select(s => s.AsPublicRelationShip()).ToList(),
                 read_state = new ReadyEvent.ReadState()
                 {
                     entries = db.ReadStates.Where(s => s.User.Id == user.Id).ToList(),
@@ -118,8 +92,7 @@ public class Identify: IGatewayMessage
                     partial = false,
                     version = 642,
                 },
-                private_channels = db.Channels
-                    .Where(s => (s.Type == 1 || s.Type == 3) && s.Recipients.Any(s => s.Id == user.Id)).ToList(),
+                private_channels = dmChannels,
                 session_id = client.session_id,
                 analytics_token = "",
                 connected_accounts = db.ConnectedAccounts.Where(s => s.User.Id == user.Id).ToList(),
@@ -134,7 +107,7 @@ public class Identify: IGatewayMessage
                 friend_suggestions = 0,
                 experiments = new List<object>(),
                 guild_join_requests = new List<object>(),
-                users = new List<ReadyEvent.PublicUser>(),
+                users = users,
                 merged_members = db.Members.Where(s => s.Id == user.Id).ToList()
             };
 
