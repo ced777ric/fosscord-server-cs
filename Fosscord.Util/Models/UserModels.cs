@@ -21,7 +21,7 @@ public class PublicUser
     public bool bot { get; set; }
     public string bio { get; set; } = null!;
     public int public_flags { get; set; }
-    public DateTime premium_since { get; set; } = new DateTime();
+    public DateTime? premium_since { get; set; } = null;
 }
     
 public class PrivateUser
@@ -45,7 +45,7 @@ public class PrivateUser
     public string? email { get; set; }
     public string flags { get; set; } = null!;
     public int public_flags { get; set; }
-    public DateTime premium_since { get; set; } = new DateTime();
+    public DateTime? premium_since { get; set; } = null;
 }
 
 public static class UserExtensions
@@ -61,7 +61,7 @@ public static class UserExtensions
             bot = user.Bot,
             discriminator = user.Discriminator,
             id = user.Id,
-            premium_since = new DateTime(),
+            premium_since = null,
             public_flags = user.PublicFlags,
             username = user.Username
         };

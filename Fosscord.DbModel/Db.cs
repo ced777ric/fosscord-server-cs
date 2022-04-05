@@ -61,6 +61,9 @@ public class Db : DbContext
 //         }
 
     //overrides
+
+    private static object _cnfLockObject = new object();
+    
     public override void Dispose()
     {
         InUse = false;
@@ -102,8 +105,12 @@ public class Db : DbContext
 
     public static Db GetNewDb()
     {
-        var cfg = DbConfig.Read();
-        cfg.Save();
+        DbConfig cfg = null;
+        lock (_cnfLockObject)
+        {
+            cfg = DbConfig.Read();
+            cfg.Save();
+        }
         return cfg.Driver.ToLower() switch
         {
             "postgres" => GetNewPostgres(),
@@ -118,8 +125,12 @@ public class Db : DbContext
     public static Db GetNewMysql()
     {
         GetDbModelLogger().Log("Instantiating new DB context: MariDB");
-        var cfg = DbConfig.Read();
-        cfg.Save();
+        DbConfig cfg = null;
+        lock (_cnfLockObject)
+        {
+            cfg = DbConfig.Read();
+            cfg.Save();
+        }
         string ds =
             $"Data Source={cfg.Host};port={cfg.Port};Database={cfg.Database};User Id={cfg.Username};password={cfg.Password};charset=utf8;";
         var db = new Db(new DbContextOptionsBuilder<Db>().UseMySql(ds, ServerVersion.AutoDetect(ds)
@@ -139,8 +150,12 @@ public class Db : DbContext
     public static Db GetNewPostgres()
     {
         GetDbModelLogger().Log("Instantiating new DB context: Postgres");
-        var cfg = DbConfig.Read();
-        cfg.Save();
+        DbConfig cfg = null;
+        lock (_cnfLockObject)
+        {
+            cfg = DbConfig.Read();
+            cfg.Save();
+        }
         var db = new Db(new DbContextOptionsBuilder<Db>()
             .UseNpgsql(
                 $"Host={cfg.Host};Database={cfg.Database};Username={cfg.Username};Password={cfg.Password};Port={cfg.Port};Include Error Detail=true"
@@ -164,8 +179,12 @@ public class Db : DbContext
     public static Db GetSqlite()
     {
         GetDbModelLogger().Log("Instantiating new DB context: Sqlite");
-        var cfg = DbConfig.Read();
-        cfg.Save();
+        DbConfig cfg = null;
+        lock (_cnfLockObject)
+        {
+            cfg = DbConfig.Read();
+            cfg.Save();
+        }
         return new Db(new DbContextOptionsBuilder<Db>()
             .UseSqlite($"Data Source={cfg.Database}.db;Version=3;",
                 x =>
@@ -178,8 +197,12 @@ public class Db : DbContext
     public static Db GetInMemoryDb()
     {
         GetDbModelLogger().Log("Instantiating new DB context: InMemory");
-        var cfg = DbConfig.Read();
-        cfg.Save();
+        DbConfig cfg = null;
+        lock (_cnfLockObject)
+        {
+            cfg = DbConfig.Read();
+            cfg.Save();
+        }
         return new Db(new DbContextOptionsBuilder<Db>().UseInMemoryDatabase("InMemoryDb")
             .LogTo(Console.WriteLine, LogLevel.Information).EnableSensitiveDataLogging().Options);
     }

@@ -10,7 +10,7 @@ public class StaticController : Controller {
     private readonly Db _db;
 
     public StaticController(Db db) {
-        _db = db;
+        _db = Db.GetNewDb();
     }
     
     [HttpGet("/resources/{*res:required}")]

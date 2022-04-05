@@ -11,9 +11,7 @@ namespace Fosscord.API.Classes;
 
 public class JWTAuthenticationManager
 {
-    private readonly Db db = Db.GetNewDb();
- 
-    private readonly string tokenKey;
+   private readonly string tokenKey;
  
     public JWTAuthenticationManager()
     {
@@ -34,12 +32,12 @@ public class JWTAuthenticationManager
         };
         var tokenClaim = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken tokenValidated);
         claimsPrincipal = tokenClaim;
-        return db.Users.FirstOrDefault(x => x.Id == tokenClaim.Identity.Name);
+        return Db.GetNewDb().Users.FirstOrDefault(x => x.Id == tokenClaim.Identity.Name);
     }
  
     public string Authenticate(string username, string password)
     {
-        var user = db.Users.FirstOrDefault(x => x.Email == username);
+        var user = Db.GetNewDb().Users.FirstOrDefault(x => x.Email == username);
         if (user == null) return null;
         var hash = ((dynamic) JsonConvert.DeserializeObject(user.Data)).hash;
         if (!BCrypt.Net.BCrypt.Verify(password, hash.ToString())) return null;

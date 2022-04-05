@@ -170,35 +170,6 @@ public class Identify: IGatewayMessage
             });
             client.is_ready = true;
 
-            foreach (var relationship in db.Relationships.Include(s => s.To).Where(s => s.FromId == user.Id).ToList())
-            {
-                await GatewayController.Send(client, new Payload()
-                {
-                    d = new
-                    {
-                        data = relationship.AsPublicRelationShip(),
-                        user_id = relationship.ToId
-                    },
-                    op = Constants.OpCodes.Dispatch,
-                    t = "RELATIONSHIP_ADD",
-                    s = client.sequence++
-                });
-            }
-            
-            foreach (var privateChannels in dmChannels)
-            {
-                await GatewayController.Send(client, new Payload()
-                {
-                    d = new
-                    {
-                        data = privateChannels
-                    },
-                    op = Constants.OpCodes.Dispatch,
-                    t = "CHANNEL_CREATE",
-                    s = client.sequence++
-                });
-            }
-            
             Console.WriteLine($"Got user {user.Id} {user.Email}");
         }
     }

@@ -17,9 +17,9 @@ public class RelationshipsController: Controller
 {
     private readonly Db _db;
 
-    public RelationshipsController(Db db)
+    public RelationshipsController()
     {
-        _db = db;
+        _db = Db.GetNewDb();
     }
     
     [HttpGet]

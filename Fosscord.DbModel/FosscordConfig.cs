@@ -4,10 +4,9 @@ namespace Fosscord.DbModel;
 
 public class FosscordConfig
 {
-    public static Db db = Db.GetNewDb();
-
     public static int GetInt(string key, int defaultValue = 0)
     {
+        var db = Db.GetNewDb();
         var val = db.Configs.FirstOrDefault(x => x.Key == key)?.Value;
         
         if (val == null)
@@ -27,6 +26,7 @@ public class FosscordConfig
 
     public static string GetString(string key, string defaultValue = "")
     {
+        var db = Db.GetNewDb();
         var val = db.Configs.FirstOrDefault(x => x.Key == key)?.Value;
         
         if (val == null)
@@ -46,6 +46,7 @@ public class FosscordConfig
 
     public static bool GetBool(string key, bool defaultValue = false)
     {
+        var db = Db.GetNewDb();
         var val = db.Configs.FirstOrDefault(x => x.Key == key)?.Value;
         
         if (val == null)

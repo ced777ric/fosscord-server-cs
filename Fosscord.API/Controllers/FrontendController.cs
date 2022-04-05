@@ -12,7 +12,7 @@ public class FrontendController : Controller
 
     public FrontendController(Db db)
     {
-        _db = db;
+        _db = Db.GetNewDb();
     }
 
     [HttpGet]

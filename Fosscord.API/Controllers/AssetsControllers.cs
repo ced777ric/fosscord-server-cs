@@ -11,7 +11,7 @@ public class AssetsController : Controller {
     private readonly Db _db;
     private static readonly WebClient wc = new WebClient();
     public AssetsController(Db db) {
-        _db = db;
+        _db = Db.GetNewDb();;
     }
     
     [HttpGet("/assets/{*res:required}")]

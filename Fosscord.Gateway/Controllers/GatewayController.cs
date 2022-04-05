@@ -157,7 +157,7 @@ public class GatewayController : Controller
 
                 string data = JsonConvert.SerializeObject(payload, Formatting.None, new JsonSerializerSettings
                 {
-                    NullValueHandling = NullValueHandling.Ignore
+                    NullValueHandling = NullValueHandling.Include
                 });
                 Console.WriteLine(data);
                 var bytes = Encoding.UTF8.GetBytes(data);
@@ -168,7 +168,7 @@ public class GatewayController : Controller
                 }
                 else
                 {
-                    await Clients[client].SendAsync(bytes, WebSocketMessageType.Binary, true, 
+                    await Clients[client].SendAsync(bytes, WebSocketMessageType.Text, true, 
                         client.CancellationToken);
                 }
                 

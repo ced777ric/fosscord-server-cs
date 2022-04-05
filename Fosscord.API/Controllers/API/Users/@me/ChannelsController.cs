@@ -9,19 +9,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fosscord.API.Controllers.API.Users.me;
 
-[Route("/api/users/@me/channels")]
 [TokenAuthorization]
 public class ChannelsController: Controller
 {
     
     private readonly Db _db;
 
-    public ChannelsController(Db db)
+    public ChannelsController()
     {
-        _db = db;
+        _db = Db.GetNewDb();
     }
     
-    [HttpGet]
+    [HttpGet("/api/users/@me/channels")]
     public async Task<IActionResult> Index()
     {
         var user = _db.Users.FirstOrDefault(s => s.Id == HttpContext.User.Identity.Name);
@@ -29,7 +28,7 @@ public class ChannelsController: Controller
         return Json(dmChannels);
     }
     
-    [HttpPost]
+    [HttpPost("/api/users/@me/channels")]
     public async Task<IActionResult> Index([FromBody] DmChannelCreate model)
     {
         if (!ModelState.IsValid)
