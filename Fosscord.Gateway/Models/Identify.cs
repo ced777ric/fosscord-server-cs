@@ -1,11 +1,13 @@
-﻿namespace Fosscord.Gateway.Models;
+﻿using Fosscord.DbModel.Scaffold;
+
+namespace Fosscord.Gateway.Models;
 
 public class Identify
 {
     public string token;
     public IdentifyProperties properties;
     public Intents intents;
-    //todo activity
+    public ActivityBase presence;
     public bool compress;
     public int large_threshold;
     public long shard;
@@ -38,4 +40,63 @@ public class IdentifyProperties
     public object client_event_source;
     public string client_version;
     public string system_locale;
+}
+
+public class ActivityBase
+{
+    public bool afk;
+    public string status;
+    public int since;
+    public List<Activity> activities;
+}
+
+public class Activity
+{
+    public string name;
+    public int type;
+    public string url;
+    public DateTime created_at;
+    public Timestamps Timestamps;
+    public int application_id;
+    public string details;
+    public Emoji emoji;
+    public Party party;
+    public Assets assets;
+    public Secrets secrets;
+    public bool instance;
+    public int since;
+}
+
+public class Assets
+{
+    public string large_image;
+    public string large_text;
+    public string small_image;
+    public string small_text;
+}
+
+public class Secrets
+{
+    public string join;
+    public string spectate;
+    public string match;
+}
+
+public class Party
+{
+    public string id;
+    public List<int> size;
+}
+
+public class Emoji
+{
+    public string name;
+    public string id;
+    public bool animated;
+}
+
+public class Timestamps
+{
+    public int start;
+    public int end;
 }

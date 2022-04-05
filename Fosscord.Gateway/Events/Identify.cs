@@ -7,6 +7,7 @@ using Fosscord.DbModel.Scaffold;
 using Fosscord.Gateway.Controllers;
 using Fosscord.Gateway.Models;
 using Fosscord.Util.Models;
+using IdGen;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
 using Newtonsoft.Json;
@@ -71,6 +72,55 @@ public class Identify: IGatewayMessage
                 }
             }
             
+            var session = db.Sessions.Add(new Session()
+            {
+                Id = new IdGenerator(0).CreateId() + "",
+                UserId = user.Id,
+                SessionId = client.session_id,
+                Status = identify.presence.status,
+                ClientInfo = JsonConvert.SerializeObject(new
+                {
+                    client = "desktop", //todo implement other clients
+                    os = identify.properties.os,
+                    version = 0
+                }),
+                Activities = "[]",
+            });
+            await db.SaveChangesAsync();
+            
+            await GatewayController.Send(client, new Payload()
+            {
+                d = new List<object>()
+                {
+                    {new
+                    {
+                        id = session.Entity.Id,
+                        user_id = session.Entity.UserId,
+                        session_id = session.Entity.SessionId,
+                        activities = JsonConvert.DeserializeObject<List<Activity>>(session.Entity.Activities),
+                        client_info = JsonConvert.DeserializeObject<object>(session.Entity.ClientInfo),
+                        status = session.Entity.Status
+                    }}
+                },
+                op = Constants.OpCodes.Dispatch,
+                t = "SESSIONS_REPLACE",
+                s = client.sequence++
+            });
+            
+            await GatewayController.Send(client, new Payload()
+            {
+                d = new
+                {
+                    user = user.AsPublicUser(),
+                    activities = JsonConvert.DeserializeObject<List<Activity>>(session.Entity.Activities),
+                    client_status = JsonConvert.DeserializeObject<object>(session.Entity.ClientInfo),
+                    status = session.Entity.Status
+                },
+                op = Constants.OpCodes.Dispatch,
+                t = "PRESENCE_UPDATE",
+                s = client.sequence++
+            });
+            
             var settings = JsonConvert.DeserializeObject<Dictionary<string, string>>(user.Settings);
             var readyEventData = new ReadyEvent.ReadyEventData()
             {
@@ -119,6 +169,35 @@ public class Identify: IGatewayMessage
                 s = client.sequence++
             });
             client.is_ready = true;
+
+            foreach (var relationship in db.Relationships.Include(s => s.To).Where(s => s.FromId == user.Id).ToList())
+            {
+                await GatewayController.Send(client, new Payload()
+                {
+                    d = new
+                    {
+                        data = relationship.AsPublicRelationShip(),
+                        user_id = relationship.ToId
+                    },
+                    op = Constants.OpCodes.Dispatch,
+                    t = "RELATIONSHIP_ADD",
+                    s = client.sequence++
+                });
+            }
+            
+            foreach (var privateChannels in dmChannels)
+            {
+                await GatewayController.Send(client, new Payload()
+                {
+                    d = new
+                    {
+                        data = privateChannels
+                    },
+                    op = Constants.OpCodes.Dispatch,
+                    t = "CHANNEL_CREATE",
+                    s = client.sequence++
+                });
+            }
             
             Console.WriteLine($"Got user {user.Id} {user.Email}");
         }
