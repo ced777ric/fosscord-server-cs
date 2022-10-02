@@ -41,7 +41,7 @@ public class PrivateUser
     public bool bot { get; set; }
     public string bio { get; set; } = null!;
     public bool nsfw_allowed { get; set; }
-    public bool mfa_enabled { get; set; }
+    public bool? mfa_enabled { get; set; }
     public bool verified { get; set; }
     public string? email { get; set; }
     public string flags { get; set; } = null!;
