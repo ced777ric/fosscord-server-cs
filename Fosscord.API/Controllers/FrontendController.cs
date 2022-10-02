@@ -17,10 +17,15 @@ public class FrontendController : Controller
 
     [HttpGet]
     [HttpGet("/app")]
-    [HttpGet("/login")]
     [HttpGet("/register")]
-    [HttpGet("/channels/@me")]
+    [HttpGet("/channels/{*channel}")]
     public async Task<object> Home()
+    {
+        return Redirect("/login");
+    }
+    
+    [HttpGet("/login")]
+    public async Task<object> Login()
     {
         if (FosscordConfig.GetBool("client_testClient_debug", false))
             return Resolvers.ReturnFileWithVars("Resources/Pages/index-dbg.html", _db);

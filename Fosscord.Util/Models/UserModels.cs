@@ -22,6 +22,7 @@ public class PublicUser
     public string bio { get; set; } = null!;
     public int public_flags { get; set; }
     public DateTime? premium_since { get; set; } = null;
+    public object avatar_decoration { get; set; } = null;
 }
     
 public class PrivateUser
@@ -34,7 +35,7 @@ public class PrivateUser
     public string? banner { get; set; }
     public string? phone { get; set; }
     public bool desktop { get; set; }
-    public bool mobile { get; set; }
+    public string locale { get; set; }
     public bool premium { get; set; }
     public int premium_type { get; set; }
     public bool bot { get; set; }
@@ -46,6 +47,7 @@ public class PrivateUser
     public string flags { get; set; } = null!;
     public int public_flags { get; set; }
     public DateTime? premium_since { get; set; } = null;
+    public object avatar_decoration { get; set; } = null;
 }
 
 public static class UserExtensions
@@ -54,7 +56,7 @@ public static class UserExtensions
     {
         return new PublicUser()
         {
-            accent_color = user.AccentColor,
+            accent_color = user.AccentColor ?? 0,
             avatar = user.Avatar,
             banner = user.Banner,
             bio = user.Bio,
@@ -63,7 +65,8 @@ public static class UserExtensions
             id = user.Id,
             premium_since = null,
             public_flags = user.PublicFlags,
-            username = user.Username
+            username = user.Username,
+            avatar_decoration = null
         };
     }
     
@@ -71,7 +74,7 @@ public static class UserExtensions
     {
         return new PrivateUser()
         {
-            accent_color = user.AccentColor,
+            accent_color = user.AccentColor ?? 0,
             avatar = user.Avatar,
             banner = user.Banner,
             bio = user.Bio,
@@ -82,7 +85,7 @@ public static class UserExtensions
             flags = user.Flags,
             id = user.Id,
             username = user.Username,
-            mobile = user.Mobile,
+            locale = "en-US",
             phone = user.Phone,
             premium = user.Premium,
             premium_type = user.PremiumType,
@@ -90,6 +93,7 @@ public static class UserExtensions
             mfa_enabled = user.MfaEnabled,
             verified = user.Verified,
             public_flags = user.PublicFlags,
+            avatar_decoration = null
         };
     }
 

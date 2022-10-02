@@ -53,7 +53,7 @@ public class Identify: IGatewayMessage
             Db db = Db.GetNewDb();
             client.session_id = RandomStringGenerator.Generate(32);
             List<PublicUser> users = new List<PublicUser>();
-
+            users.Add(user.AsPublicUser());
             foreach (var relation in db.Relationships.Include(s => s.To).Where(s => s.FromId == user.Id).ToList())
             {
                 if (users.Any(s => s.id == relation.ToId))
@@ -77,57 +77,24 @@ public class Identify: IGatewayMessage
                 Id = new IdGenerator(0).CreateId() + "",
                 UserId = user.Id,
                 SessionId = client.session_id,
-                Status = identify.presence.status,
+                Status = identify.presence == null ? "online" : identify.presence.status,
                 ClientInfo = JsonConvert.SerializeObject(new
                 {
                     client = "desktop", //todo implement other clients
-                    os = identify.properties.os,
+                    os = identify.properties.os == null ? "None" : identify.properties.os,
                     version = 0
                 }),
                 Activities = "[]",
             });
             await db.SaveChangesAsync();
-            
-            await GatewayController.Send(client, new Payload()
-            {
-                d = new List<object>()
-                {
-                    {new
-                    {
-                        id = session.Entity.Id,
-                        user_id = session.Entity.UserId,
-                        session_id = session.Entity.SessionId,
-                        activities = JsonConvert.DeserializeObject<List<Activity>>(session.Entity.Activities),
-                        client_info = JsonConvert.DeserializeObject<object>(session.Entity.ClientInfo),
-                        status = session.Entity.Status
-                    }}
-                },
-                op = Constants.OpCodes.Dispatch,
-                t = "SESSIONS_REPLACE",
-                s = client.sequence++
-            });
-            
-            await GatewayController.Send(client, new Payload()
-            {
-                d = new
-                {
-                    user = user.AsPublicUser(),
-                    activities = JsonConvert.DeserializeObject<List<Activity>>(session.Entity.Activities),
-                    client_status = JsonConvert.DeserializeObject<object>(session.Entity.ClientInfo),
-                    status = session.Entity.Status
-                },
-                op = Constants.OpCodes.Dispatch,
-                t = "PRESENCE_UPDATE",
-                s = client.sequence++
-            });
-            
+
             var settings = JsonConvert.DeserializeObject<Dictionary<string, string>>(user.Settings);
             var readyEventData = new ReadyEvent.ReadyEventData()
             {
                 v = 9,
                 application = db.Applications.FirstOrDefault(s => s.Id == user.Id),
                 user = user.AsPrivateUser(),
-                user_settings = user.Settings,
+                user_settings = JsonConvert.DeserializeObject<object>(user.Settings),
                 guilds = db.Members.Where(s => s.Id == user.Id).Select(s => s.Guild).ToList(),
                 relationships = db.Relationships.Include(s => s.To).Where(s => s.FromId == user.Id).ToList().Select(s => s.AsPublicRelationShip()).ToList(),
                 read_state = new ReadyEvent.ReadState()
@@ -169,6 +136,39 @@ public class Identify: IGatewayMessage
                 s = client.sequence++
             });
             client.is_ready = true;
+            
+            await GatewayController.Send(client, new Payload()
+            {
+                d = new List<object>()
+                {
+                    {new
+                    {
+                        id = session.Entity.Id,
+                        user_id = session.Entity.UserId,
+                        session_id = session.Entity.SessionId,
+                        activities = JsonConvert.DeserializeObject<List<Activity>>(session.Entity.Activities),
+                        client_info = JsonConvert.DeserializeObject<object>(session.Entity.ClientInfo),
+                        status = session.Entity.Status
+                    }}
+                },
+                op = Constants.OpCodes.Dispatch,
+                t = "SESSIONS_REPLACE",
+                s = client.sequence++
+            });
+            
+            await GatewayController.Send(client, new Payload()
+            {
+                d = new
+                {
+                    user = user.AsPublicUser(),
+                    activities = JsonConvert.DeserializeObject<List<Activity>>(session.Entity.Activities),
+                    client_status = JsonConvert.DeserializeObject<object>(session.Entity.ClientInfo),
+                    status = session.Entity.Status
+                },
+                op = Constants.OpCodes.Dispatch,
+                t = "PRESENCE_UPDATE",
+                s = client.sequence++
+            });
 
             Console.WriteLine($"Got user {user.Id} {user.Email}");
         }

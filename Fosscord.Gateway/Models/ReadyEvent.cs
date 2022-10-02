@@ -9,7 +9,7 @@ public class ReadyEvent
         public int v { get; set; }
         public Application application { get; set; }
         public PrivateUser user { get; set; }
-        public string user_settings { get; set; }
+        public object user_settings { get; set; }
         public List<Guild> guilds { get; set; }
         public List<object> guild_experiments { get; set; } //todo
         public List<object> geo_ordered_rtc_regions { get; set; } //todo

@@ -8,6 +8,7 @@ using Fosscord.Util;
 using Ionic.Zlib;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace Fosscord.Gateway.Controllers;
 
@@ -77,8 +78,11 @@ public class GatewayController : Controller
 
             Clients.Add(clientSocket, webSocket);
 
-            //TODO: what this this do?
-            await SendByteArray(clientSocket, new byte[] {0x78, 0x9c});
+            if (encoding == "zlib-stream")
+            {
+                //TODO: what this this do?
+                await SendByteArray(clientSocket, new byte[] {0x78, 0x9c});
+            }
             await Send(clientSocket, new Payload()
             {
                 op = Constants.OpCodes.Hello,
@@ -154,10 +158,14 @@ public class GatewayController : Controller
         switch (client.encoding)
         {
             case "json":
-
+                
                 string data = JsonConvert.SerializeObject(payload, Formatting.None, new JsonSerializerSettings
                 {
-                    NullValueHandling = NullValueHandling.Include
+                    NullValueHandling = NullValueHandling.Include,
+                    ContractResolver = new DefaultContractResolver()
+                    {
+                        NamingStrategy = new SnakeCaseNamingStrategy()
+                    }
                 });
                 Console.WriteLine(data);
                 var bytes = Encoding.UTF8.GetBytes(data);
