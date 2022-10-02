@@ -1,29 +1,26 @@
 ﻿using System.Net.WebSockets;
-using System.Security.Claims;
 using Fosscord.API.Classes;
 using Fosscord.API.Utilities;
 using Fosscord.DbModel;
 using Fosscord.DbModel.Scaffold;
 using Fosscord.Gateway.Controllers;
 using Fosscord.Gateway.Models;
-using Fosscord.Util.Models;
-using IdGen;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Constants = Fosscord.Gateway.Models.Constants;
 
 namespace Fosscord.Gateway.Events;
 
-public class Identify: IGatewayMessage
+public class Identify : IGatewayMessage
 {
     private readonly JWTAuthenticationManager _auth;
+
     public Identify()
     {
         _auth = new JWTAuthenticationManager();
     }
-    
+
     public Constants.OpCodes OpCode { get; } = Constants.OpCodes.Identify;
 
     public async Task Invoke(Payload payload, Websocket client)
@@ -34,69 +31,82 @@ public class Identify: IGatewayMessage
             User user = null;
             try
             {
-                 user = _auth.GetUserFromToken(identify.token, out ClaimsPrincipal claimsPrincipal);
+                user = _auth.GetUserFromToken(identify.token);
             }
             catch (Exception e)
             {
                 if (GatewayController.Clients.ContainsKey(client))
-                    await GatewayController.Clients[client].CloseAsync(WebSocketCloseStatus.NormalClosure, ((int)Constants.CloseCodes.Authentication_failed).ToString(), client.CancellationToken);
+                    await GatewayController.Clients[client].CloseAsync(WebSocketCloseStatus.NormalClosure, ((int) Constants.CloseCodes.Authentication_failed).ToString(), client.CancellationToken);
                 return;
             }
 
             if (user == null)
             {
                 if (GatewayController.Clients.ContainsKey(client))
-                    await GatewayController.Clients[client].CloseAsync(WebSocketCloseStatus.NormalClosure, ((int)Constants.CloseCodes.Authentication_failed).ToString(), client.CancellationToken);
+                    await GatewayController.Clients[client].CloseAsync(WebSocketCloseStatus.NormalClosure, ((int) Constants.CloseCodes.Authentication_failed).ToString(), client.CancellationToken);
                 return;
             }
 
             Db db = Db.GetNewDb();
             client.session_id = RandomStringGenerator.Generate(32);
-            List<PublicUser> users = new List<PublicUser>();
-            users.Add(user.AsPublicUser());
-            foreach (var relation in db.Relationships.Include(s => s.To).Where(s => s.FromId == user.Id).ToList())
-            {
-                if (users.Any(s => s.id == relation.ToId))
-                    continue;
-                users.Add(relation.To.AsPublicUser());
-            }
 
-            var dmChannels = db.Channels.Include(s => s.Recipients).ThenInclude(s => s.User).Where(s => (s.Type == 1 || s.Type == 3) && s.Recipients.Any(s => s.Id == user.Id)).ToList();
-            foreach (var channel in dmChannels)
+            var privateUser = new ReadyEvent.PrivateUser()
             {
-                foreach (var recipient in channel.Recipients)
+                accent_color = user.AccentColor,
+                avatar = user.Avatar,
+                banner = user.Banner,
+                bio = user.Bio,
+                bot = user.Bot,
+                desktop = user.Desktop,
+                discriminator = user.Discriminator,
+                email = user.Email,
+                flags = user.Flags,
+                id = user.Id,
+                username = user.Username,
+                mobile = user.Mobile,
+                phone = user.Phone,
+                premium = user.Premium,
+                premium_type = user.PremiumType,
+                nsfw_allowed = user.NsfwAllowed,
+                mfa_enabled = user.MfaEnabled ?? false,
+                verified = user.Verified,
+                public_flags = user.PublicFlags,
+            };
+            List<ReadyEvent.PublicRelationShip> relationShips = new List<ReadyEvent.PublicRelationShip>();
+            foreach (var rel in db.Relationships.Include(s => s.To).Where(s => s.Id == user.Id))
+            {
+                ReadyEvent.PublicUser user1 = new ReadyEvent.PublicUser()
                 {
-                    if (users.Any(s => s.id == recipient.UserId))
-                        continue;
-                    users.Add(recipient.User.AsPublicUser());
-                }
+                    accent_color = rel.To.AccentColor,
+                    avatar = rel.To.Avatar,
+                    banner = rel.To.Banner,
+                    bio = rel.To.Bio,
+                    bot = rel.To.Bot,
+                    discriminator = rel.To.Discriminator,
+                    id = rel.To.Id,
+                    premium_since = new DateTime(),
+                    public_flags = rel.To.PublicFlags,
+                    username = rel.To.Username
+                };
+
+                relationShips.Add(new ReadyEvent.PublicRelationShip()
+                {
+                    id = rel.Id,
+                    nickname = rel.Nickname,
+                    type = rel.Type,
+                    user = user1
+                });
             }
-            
-            var session = db.Sessions.Add(new Session()
-            {
-                Id = new IdGenerator(0).CreateId() + "",
-                UserId = user.Id,
-                SessionId = client.session_id,
-                Status = identify.presence == null ? "online" : identify.presence.status,
-                ClientInfo = JsonConvert.SerializeObject(new
-                {
-                    client = "desktop", //todo implement other clients
-                    os = identify.properties.os == null ? "None" : identify.properties.os,
-                    version = 0
-                }),
-                Activities = "[]",
-            });
-            await db.SaveChangesAsync();
 
             var settings = JsonConvert.DeserializeObject<Dictionary<string, string>>(user.Settings);
             var readyEventData = new ReadyEvent.ReadyEventData()
             {
                 v = 9,
                 application = db.Applications.FirstOrDefault(s => s.Id == user.Id),
-                user = user.AsPrivateUser(),
-                user_settings = JsonConvert.DeserializeObject<object>(user.Settings),
+                user = privateUser,
+                user_settings = user.Settings,
                 guilds = db.Members.Where(s => s.Id == user.Id).Select(s => s.Guild).ToList(),
-                relationships = db.Relationships.Include(s => s.To).Where(s => s.FromId == user.Id).ToList().Select(s => s.AsPublicRelationShip()).ToList(),
+                relationships = relationShips,
                 read_state = new ReadyEvent.ReadState()
                 {
                     entries = db.ReadStates.Where(s => s.User.Id == user.Id).ToList(),
@@ -109,7 +119,8 @@ public class Identify: IGatewayMessage
                     partial = false,
                     version = 642,
                 },
-                private_channels = dmChannels,
+                private_channels = db.Channels
+                    .Where(s => (s.Type == 1 || s.Type == 3) && s.Recipients.Any(s => s.Id == user.Id)).ToList(),
                 session_id = client.session_id,
                 analytics_token = "",
                 connected_accounts = db.ConnectedAccounts.Where(s => s.User.Id == user.Id).ToList(),
@@ -124,7 +135,7 @@ public class Identify: IGatewayMessage
                 friend_suggestions = 0,
                 experiments = new List<object>(),
                 guild_join_requests = new List<object>(),
-                users = users,
+                users = new List<ReadyEvent.PublicUser>(),
                 merged_members = db.Members.Where(s => s.Id == user.Id).ToList()
             };
 
@@ -136,39 +147,6 @@ public class Identify: IGatewayMessage
                 s = client.sequence++
             });
             client.is_ready = true;
-            
-            await GatewayController.Send(client, new Payload()
-            {
-                d = new List<object>()
-                {
-                    {new
-                    {
-                        id = session.Entity.Id,
-                        user_id = session.Entity.UserId,
-                        session_id = session.Entity.SessionId,
-                        activities = JsonConvert.DeserializeObject<List<Activity>>(session.Entity.Activities),
-                        client_info = JsonConvert.DeserializeObject<object>(session.Entity.ClientInfo),
-                        status = session.Entity.Status
-                    }}
-                },
-                op = Constants.OpCodes.Dispatch,
-                t = "SESSIONS_REPLACE",
-                s = client.sequence++
-            });
-            
-            await GatewayController.Send(client, new Payload()
-            {
-                d = new
-                {
-                    user = user.AsPublicUser(),
-                    activities = JsonConvert.DeserializeObject<List<Activity>>(session.Entity.Activities),
-                    client_status = JsonConvert.DeserializeObject<object>(session.Entity.ClientInfo),
-                    status = session.Entity.Status
-                },
-                op = Constants.OpCodes.Dispatch,
-                t = "PRESENCE_UPDATE",
-                s = client.sequence++
-            });
 
             Console.WriteLine($"Got user {user.Id} {user.Email}");
         }
