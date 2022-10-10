@@ -1,10 +1,13 @@
 ﻿using System.Net.WebSockets;
+using System.Security.Claims;
 using Fosscord.API.Classes;
 using Fosscord.API.Utilities;
 using Fosscord.DbModel;
 using Fosscord.DbModel.Scaffold;
 using Fosscord.Gateway.Controllers;
 using Fosscord.Gateway.Models;
+using Fosscord.Util.Models;
+using IdGen;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -20,7 +23,7 @@ public class Identify : IGatewayMessage
     {
         _auth = new JwtAuthenticationManager();
     }
-
+    
     public Constants.OpCodes OpCode { get; } = Constants.OpCodes.Identify;
 
     public async Task Invoke(Payload payload, Websocket client)
@@ -31,26 +34,26 @@ public class Identify : IGatewayMessage
             User user = null;
             try
             {
-                user = _auth.GetUserFromToken(identify.token);
+                 user = _auth.GetUserFromToken(identify.token, out ClaimsPrincipal principal);
             }
             catch (Exception e)
             {
                 if (GatewayController.Clients.ContainsKey(client))
-                    await GatewayController.Clients[client].CloseAsync(WebSocketCloseStatus.NormalClosure, ((int) Constants.CloseCodes.Authentication_failed).ToString(), client.CancellationToken);
+                    await GatewayController.Clients[client].CloseAsync(WebSocketCloseStatus.NormalClosure, ((int)Constants.CloseCodes.Authentication_failed).ToString(), client.CancellationToken);
                 return;
             }
 
             if (user == null)
             {
                 if (GatewayController.Clients.ContainsKey(client))
-                    await GatewayController.Clients[client].CloseAsync(WebSocketCloseStatus.NormalClosure, ((int) Constants.CloseCodes.Authentication_failed).ToString(), client.CancellationToken);
+                    await GatewayController.Clients[client].CloseAsync(WebSocketCloseStatus.NormalClosure, ((int)Constants.CloseCodes.Authentication_failed).ToString(), client.CancellationToken);
                 return;
             }
 
             Db db = Db.GetNewDb();
             client.session_id = RandomStringGenerator.Generate(32);
 
-            var privateUser = new ReadyEvent.PrivateUser()
+            var privateUser = new PrivateUser()
             {
                 accent_color = user.AccentColor,
                 avatar = user.Avatar,
@@ -63,19 +66,18 @@ public class Identify : IGatewayMessage
                 flags = user.Flags,
                 id = user.Id,
                 username = user.Username,
-                mobile = user.Mobile,
                 phone = user.Phone,
                 premium = user.Premium,
                 premium_type = user.PremiumType,
                 nsfw_allowed = user.NsfwAllowed,
-                mfa_enabled = user.MfaEnabled ?? false,
+                mfa_enabled = user.MfaEnabled,
                 verified = user.Verified,
                 public_flags = user.PublicFlags,
             };
-            List<ReadyEvent.PublicRelationShip> relationShips = new List<ReadyEvent.PublicRelationShip>();
+            List<PublicRelationShip> relationShips = new List<PublicRelationShip>();
             foreach (var rel in db.Relationships.Include(s => s.To).Where(s => s.Id == user.Id))
             {
-                ReadyEvent.PublicUser user1 = new ReadyEvent.PublicUser()
+                PublicUser user1 = new PublicUser()
                 {
                     accent_color = rel.To.AccentColor,
                     avatar = rel.To.Avatar,
@@ -88,17 +90,15 @@ public class Identify : IGatewayMessage
                     public_flags = rel.To.PublicFlags,
                     username = rel.To.Username
                 };
-
-                relationShips.Add(new ReadyEvent.PublicRelationShip()
+                
+                relationShips.Add(new PublicRelationShip()
                 {
                     id = rel.Id,
                     nickname = rel.Nickname,
                     type = rel.Type,
-                    user = user1
+                    user = user1 
                 });
             }
-
-            var settings = JsonConvert.DeserializeObject<Dictionary<string, string>>(user.Settings);
             var readyEventData = new ReadyEvent.ReadyEventData()
             {
                 v = 9,
@@ -131,11 +131,11 @@ public class Identify : IGatewayMessage
                         consented = false,
                     }
                 },
-                country_code = settings.ContainsKey("locale") ? settings["locale"] : "en-us",
+                country_code = user.Settings.Locale,
                 friend_suggestions = 0,
                 experiments = new List<object>(),
                 guild_join_requests = new List<object>(),
-                users = new List<ReadyEvent.PublicUser>(),
+                users = new List<PublicUser>(),
                 merged_members = db.Members.Where(s => s.Id == user.Id).ToList()
             };
 
@@ -147,7 +147,7 @@ public class Identify : IGatewayMessage
                 s = client.sequence++
             });
             client.is_ready = true;
-
+            
             Console.WriteLine($"Got user {user.Id} {user.Email}");
         }
     }
