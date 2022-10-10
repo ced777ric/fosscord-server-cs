@@ -4,7 +4,6 @@ using ArcaneLibs;
 using Fosscord.API;
 using Fosscord.API.Utilities;
 using Fosscord.Shared.Enums;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
 namespace Fosscord.DbModel;

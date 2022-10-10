@@ -29,7 +29,9 @@ public class JwtAuthenticationManager
         };
         var claim = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken tokenValidated);
         tokenClaim = claim;
-        return _db.Users.Include(s => s.Settings).FirstOrDefault(x => x.Id == claim.Identity.Name);
+        var user = _db.Users.Include(s => s.Settings).FirstOrDefault(x => x.Id == claim.Identity.Name);
+        user.Settings.User = null;
+        return user;
     }
  
     public string? Authenticate(string username, string password)

@@ -68,7 +68,6 @@ public class AuthController : Controller
             ExtendedSettings = "",
             SettingsId = userId,
             Fingerprints = "",
-            ExtendedSettings = ""
         };
         user.Settings.Id = user.Id;
         _db.Users.Add(user);
