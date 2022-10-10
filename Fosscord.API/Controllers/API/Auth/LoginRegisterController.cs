@@ -2,8 +2,6 @@ using Fosscord.API.Classes;
 using Fosscord.API.PostData;
 using Fosscord.DbModel;
 using Fosscord.DbModel.Scaffold;
-using Fosscord.Shared.Attributes;
-using Fosscord.Shared.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -54,7 +52,7 @@ public class AuthController : Controller
             Disabled = false,
             Deleted = false,
             Email = data.Email,
-            Rights = Config.Read().Security.Register.DefaultRights,
+            Rights = Static.Config.Security.Register.DefaultRights,
             NsfwAllowed = true, // TODO = depending on age
             PublicFlags = 0,
             Flags = "0", // TODO = generate
@@ -70,7 +68,9 @@ public class AuthController : Controller
             ExtendedSettings = "",
             SettingsId = userId,
             Fingerprints = "",
+            ExtendedSettings = ""
         };
+        user.Settings.Id = user.Id;
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
         

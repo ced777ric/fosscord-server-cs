@@ -30,11 +30,12 @@ public class Identify : IGatewayMessage
     {
         if (payload.d is JObject jObject)
         {
+            Db db = Db.GetNewDb();
             var identify = jObject.ToObject<Models.Identify>();
             User user = null;
             try
             {
-                 user = _auth.GetUserFromToken(identify.token, out var claim);
+                user = _auth.GetUserFromToken(identify.token, out var claim);
             }
             catch (Exception e)
             {
@@ -50,7 +51,6 @@ public class Identify : IGatewayMessage
                 return;
             }
 
-            Db db = Db.GetNewDb();
             client.session_id = RandomStringGenerator.Generate(32);
 
             var privateUser = new PrivateUser()
@@ -99,7 +99,8 @@ public class Identify : IGatewayMessage
                     user = user1 
                 });
             }
-            user.Settings.User = null;
+
+            //var settings = JsonConvert.DeserializeObject<Dictionary<string, string>>(user.Settings);
             var readyEventData = new ReadyEvent.ReadyEventData()
             {
                 v = 9,

@@ -1,11 +1,9 @@
-﻿using System.IO.Compression;
-using System.Net.WebSockets;
+﻿using System.Net.WebSockets;
 using System.Text;
 using Fosscord.DbModel;
 using Fosscord.Gateway.Events;
 using Fosscord.Gateway.Models;
 using Fosscord.Util;
-using Ionic.Zlib;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -167,6 +165,7 @@ public class GatewayController : Controller
                         NamingStrategy = new SnakeCaseNamingStrategy()
                     }
                 });
+                Console.Write("send: ");
                 Console.WriteLine(data);
                 var bytes = Encoding.UTF8.GetBytes(data);
                 if (client.compress == "zlib-stream")
@@ -176,8 +175,7 @@ public class GatewayController : Controller
                 }
                 else
                 {
-                    await Clients[client].SendAsync(bytes, WebSocketMessageType.Text, true, 
-                        client.CancellationToken);
+                    await Clients[client].SendAsync(bytes, WebSocketMessageType.Text, true, client.CancellationToken);
                 }
                 
                 break;
