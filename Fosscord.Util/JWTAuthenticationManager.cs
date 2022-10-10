@@ -4,6 +4,7 @@ using System.Text;
 using Fosscord.API.Utilities;
 using Fosscord.DbModel;
 using Fosscord.DbModel.Scaffold;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 
@@ -16,7 +17,7 @@ public class JwtAuthenticationManager
     private readonly string _tokenKey = Static.Config.Security.JwtSecret;
  
 
-    public User GetUserFromToken(string token)
+    public User GetUserFromToken(string token, out ClaimsPrincipal tokenClaim)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_tokenKey);
@@ -28,8 +29,9 @@ public class JwtAuthenticationManager
             ValidateAudience = false,
             ValidateIssuer = false,
         };
-        var tokenClaim = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken tokenValidated);
-        return _db.Users.FirstOrDefault(x => x.Id == tokenClaim.Identity.Name);
+        var claim = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken tokenValidated);
+        tokenClaim = claim;
+        return _db.Users.Include(s => s.Settings).FirstOrDefault(x => x.Id == claim.Identity.Name);
     }
  
     public string? Authenticate(string username, string password)

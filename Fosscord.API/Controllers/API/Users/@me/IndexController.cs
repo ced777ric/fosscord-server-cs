@@ -1,4 +1,5 @@
 ﻿using Fosscord.DbModel;
+using Fosscord.Shared.Attributes;
 using Fosscord.Util;
 using Fosscord.Util.Models;
 using Microsoft.AspNetCore.Mvc;

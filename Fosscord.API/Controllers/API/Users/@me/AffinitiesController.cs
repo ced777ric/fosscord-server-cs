@@ -1,4 +1,5 @@
-﻿using Fosscord.Util;
+﻿using Fosscord.Shared.Attributes;
+using Fosscord.Util;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Fosscord.API.Controllers.API.Users.me.Affinities;

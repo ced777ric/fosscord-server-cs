@@ -14,12 +14,17 @@ public class FrontendController : Controller
     {
         _db = db;
     }
-
+    
     [HttpGet]
     [HttpGet("/app")]
+    [HttpGet("/channels/{*channel}")]
+    public async Task<object> RedirectApp()
+    {
+        return Redirect("/login");
+    }
+    
     [HttpGet("/login")]
     [HttpGet("/register")]
-    [HttpGet("/channels/@me")]
     public async Task<object> Home()
     {
         if (Static.Config.TestClient.Debug)

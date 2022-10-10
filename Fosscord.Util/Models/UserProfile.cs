@@ -45,7 +45,7 @@ public static class UserProfileExtensions
             type = connectedAccount.Type,
             id = connectedAccount.Id,
             name = connectedAccount.Name,
-            verified = connectedAccount.Verifie
+            verified = connectedAccount.Verified
         };
     }
     

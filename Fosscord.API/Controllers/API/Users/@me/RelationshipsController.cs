@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using Fosscord.DbModel;
 using Fosscord.DbModel.Scaffold;
+using Fosscord.Shared.Attributes;
 using Fosscord.Util;
 using Fosscord.Util.Models;
 using Fosscord.Util.Utilities;

@@ -34,7 +34,7 @@ public class Identify : IGatewayMessage
             User user = null;
             try
             {
-                 user = _auth.GetUserFromToken(identify.token, out ClaimsPrincipal principal);
+                 user = _auth.GetUserFromToken(identify.token, out var claim);
             }
             catch (Exception e)
             {
@@ -99,6 +99,7 @@ public class Identify : IGatewayMessage
                     user = user1 
                 });
             }
+            user.Settings.User = null;
             var readyEventData = new ReadyEvent.ReadyEventData()
             {
                 v = 9,

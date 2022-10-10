@@ -1,4 +1,5 @@
-﻿using Fosscord.DbModel;
+﻿using Fosscord.API;
+using Fosscord.DbModel;
 using Fosscord.DbModel.Scaffold;
 
 namespace Fosscord.Util.Utilities;
@@ -21,7 +22,7 @@ public class Channel
             throw new Exception("Recipient/s not found");
         }
 
-        int max = FosscordConfig.GetInt("dm_groupchat_max_members", 10);
+        int max = 10; //todo config
 
         if (recipients.Count > max)
         {

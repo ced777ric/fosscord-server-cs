@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace Fosscord.Util;
+namespace Fosscord.Shared.Attributes;
 
 [AttributeUsage(AttributeTargets.Class)]  
 public class TokenAuthorizationAttribute : Attribute, IAuthorizationFilter  
@@ -23,7 +23,7 @@ public class TokenAuthorizationAttribute : Attribute, IAuthorizationFilter
                 if (_token != null)
                 {
                     string authToken = _token;
-                    var jwtAuthenticationManager = new JWTAuthenticationManager();
+                    var jwtAuthenticationManager = new JwtAuthenticationManager();
                     try
                     {
                         var user = jwtAuthenticationManager.GetUserFromToken(authToken, out ClaimsPrincipal claimsPrincipal);
@@ -34,7 +34,7 @@ public class TokenAuthorizationAttribute : Attribute, IAuthorizationFilter
                             filterContext.HttpContext.Response.HttpContext.Features.Get<IHttpResponseFeature>().ReasonPhrase = "Unauthorized";
                             filterContext.Result = new JsonResult(new
                                 {
-                                    message = "401: Unathorized",
+                                    message = "401: Unauthorized",
                                     code = 0,
                                 }
                             );
@@ -50,7 +50,7 @@ public class TokenAuthorizationAttribute : Attribute, IAuthorizationFilter
                         filterContext.HttpContext.Response.HttpContext.Features.Get<IHttpResponseFeature>().ReasonPhrase = "Unauthorized";
                         filterContext.Result = new JsonResult(new
                             {
-                                message = "401: Unathorized",
+                                message = "401: Unauthorized",
                                 code = 0,
                             }
                         );

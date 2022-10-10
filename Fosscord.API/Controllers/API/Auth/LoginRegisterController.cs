@@ -35,12 +35,13 @@ public class AuthController : Controller
         Console.WriteLine(JsonConvert.SerializeObject(data));
         string discrim = Rnd.Next(10000).ToString();
         if (_db.Users.Any(x => x.Email == data.Email)) return new StatusCodeResult(403);
+        var userId = new IdGen.IdGenerator(0).CreateId() + "";
         var user = new User()
         {
             CreatedAt = DateTime.Now,
             Username = data.Username,
             Discriminator = discrim,
-            Id = new IdGen.IdGenerator(0).CreateId() + "",
+            Id = userId,
             Bot = false,
             System = false,
             Desktop = false,
@@ -62,11 +63,16 @@ public class AuthController : Controller
                 hash = BCrypt.Net.BCrypt.HashPassword(data.Password, 12),
                 valid_tokens_since = DateTime.Now,
             }),
-            Settings = new(),
+            Settings = new UserSetting()
+            {
+                Id = userId,
+            },
+            ExtendedSettings = "",
+            SettingsId = userId,
             Fingerprints = "",
         };
         _db.Users.Add(user);
-        _db.SaveChanges();
+        await _db.SaveChangesAsync();
         
         var token = _auth.Authenticate(data.Email, data.Password);
         if (token == null) return new StatusCodeResult(500);
